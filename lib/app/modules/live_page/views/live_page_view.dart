@@ -10,17 +10,47 @@ class LivePageView extends GetView<LivePageController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(live != null ? "Live by ${live!.hostId}" : "Go Live"),
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
+        if (controller.isHost) {
+          await controller.stopLive();
+        } else {
+          await controller.leaveLive();
+        }
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(controller.isHost
+              ? "Live Streaming"
+              : "Watching ${live?.hostId}"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () async {
+                if (controller.isHost) {
+                  await controller.stopLive();
+                } else {
+                  await controller.leaveLive();
+                }
+                Get.back();
+              },
+            ),
+          ],
+        ),
         body: Obx(() {
           if (controller.connecting.value) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Host mode
-          if (controller.localVideoTrack != null && live == null) {
+          if (controller.isHost && controller.localVideoTrack != null) {
+            // Host video
             return Center(
               child: AspectRatio(
                 aspectRatio: 9 / 16,
@@ -29,35 +59,18 @@ class LivePageView extends GetView<LivePageController> {
             );
           }
 
-          // ✅ Viewer mode (FIXED)
-          // Viewer mode
-          if (live != null &&
-              controller.room != null &&
-              controller.room!.remoteParticipants.isNotEmpty) {
-
-            final remoteParticipant =
-                controller.room!.remoteParticipants.values.first;
-
-            if (remoteParticipant.videoTrackPublications.isNotEmpty) {
-              final publication =
-                  remoteParticipant.videoTrackPublications.first;
-
-              final remoteTrack = publication.track;
-
-              if (remoteTrack != null) {
-                return Center(
-                  child: AspectRatio(
-                    aspectRatio: 9 / 16,
-                    child: VideoTrackRenderer(remoteTrack),
-                  ),
-                );
-              }
-            }
+          if (!controller.isHost && controller.remoteVideoTrack.value != null) {
+            // Viewer video
+            return Center(
+              child: AspectRatio(
+                aspectRatio: 9 / 16,
+                child: VideoTrackRenderer(controller.remoteVideoTrack.value!),
+              ),
+            );
           }
 
-
-          // Host start button
-          if (live == null) {
+          // Buttons
+          if (controller.isHost) {
             return Center(
               child: ElevatedButton(
                 onPressed: () {
@@ -73,9 +86,9 @@ class LivePageView extends GetView<LivePageController> {
             );
           }
 
-          return const Center(child: Text("No live available"));
+          return const Center(child: Text("Waiting for host video..."));
         }),
-
+      ),
     );
   }
 }

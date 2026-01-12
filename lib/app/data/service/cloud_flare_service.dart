@@ -6,14 +6,26 @@ class CloudflareService {
   static const String baseUrl = "https://livekit-token.remonhowlader869.workers.dev";
 
   static Future<List<LiveModel>> getLiveList() async {
-    final res = await http.get(Uri.parse("$baseUrl/live"));
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body);
-      return data.map((e) => LiveModel.fromJson(e)).toList();
-    } else {
-      return [];
+    try {
+      final res = await http.get(Uri.parse("$baseUrl/live"));
+
+      if (res.statusCode != 200) return [];
+
+      final decoded = jsonDecode(res.body);
+
+      if (decoded is Map && decoded['data'] is List) {
+        return (decoded['data'] as List)
+            .map((e) => LiveModel.fromJson(e))
+            .toList();
+      }
+    } catch (e) {
+      print("Cloudflare error: $e");
     }
+
+    return [];
   }
+
+
 
   static Future<void> addLive({required String roomId, required String hostId}) async {
     await http.post(
