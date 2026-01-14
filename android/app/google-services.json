@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "544436452328",
+    "project_id": "live-stream-74918",
+    "storage_bucket": "live-stream-74918.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544436452328:android:ed102b99e5b1f8d842425d",
+        "android_client_info": {
+          "package_name": "com.example.live_stream"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "544436452328-qpslo2157kr6jaj8po7s8noh39kamnn7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0gRzyguBEWzV0J_N79taTaELGDsTfYO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "544436452328-qpslo2157kr6jaj8po7s8noh39kamnn7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "544436452328-4h1blid4an6nq96ffvbrle6fchbbn96u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.remon.liveStreamWithZegocloude"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544436452328:android:380adaabd2dc679c42425d",
+        "android_client_info": {
+          "package_name": "com.remon.live_stream_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "544436452328-pfj6enpaus1tbtbhs1b1am7cf7legvm2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.remon.live_stream_app",
+            "certificate_hash": "5e54fdee9b4534cce0913e3f9a8127aa0eba8112"
+          }
+        },
+        {
+          "client_id": "544436452328-qpslo2157kr6jaj8po7s8noh39kamnn7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0gRzyguBEWzV0J_N79taTaELGDsTfYO4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "544436452328-qpslo2157kr6jaj8po7s8noh39kamnn7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "544436452328-4h1blid4an6nq96ffvbrle6fchbbn96u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.remon.liveStreamWithZegocloude"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
