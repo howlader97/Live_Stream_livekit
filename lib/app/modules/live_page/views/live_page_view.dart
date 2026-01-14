@@ -2,93 +2,87 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:livekit_client/livekit_client.dart';
 import '../controllers/live_page_controller.dart';
-import '../models/live_model.dart';
+
 
 class LivePageView extends GetView<LivePageController> {
-  final LiveModel? live;
-  const LivePageView({super.key, this.live});
+  const LivePageView({super.key,});
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) {
-          return;
-        }
-        if (controller.isHost) {
-          await controller.stopLive();
-        } else {
-          await controller.leaveLive();
-        }
-        if (context.mounted) {
-          Navigator.of(context).pop();
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(controller.isHost
-              ? "Live Streaming"
-              : "Watching ${live?.hostId}"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () async {
-                if (controller.isHost) {
-                  await controller.stopLive();
-                } else {
-                  await controller.leaveLive();
-                }
-                Get.back();
-              },
+  // controller.init(roomName, userName, isHost);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Live Stream'),
+        automaticallyImplyLeading: false, // Handle back manually
+      ),
+      body: Stack(
+        children: [
+          // Video Grid
+          Obx(() {
+            if (!controller.isConnected.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            // Show Local Video if Host, or Remote Video(s)
+            List<Widget> videoViews = [];
+
+            if (controller.isHost && controller.localVideoTrack.value != null) {
+              videoViews.add(
+                  VideoTrackRenderer(
+                    controller.localVideoTrack.value!,
+                    fit: VideoViewFit.cover,
+                  )
+              );
+            }
+
+            for (var track in controller.remoteVideoTracks) {
+              videoViews.add(
+                  VideoTrackRenderer(
+                    track,
+                    fit: VideoViewFit.cover,
+                  )
+              );
+            }
+
+            if (videoViews.isEmpty) {
+              return const Center(child: Text("Waiting for video..."));
+            }
+
+            // Simple Grid for now
+            return GridView.count(
+              crossAxisCount: videoViews.length > 1 ? 2 : 1,
+              children: videoViews,
+            );
+          }),
+
+          // Controls
+          Positioned(
+            bottom: 30,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FloatingActionButton(
+                  heroTag: "mic",
+                  onPressed: controller.toggleMic,
+                  child: const Icon(Icons.mic),
+                ),
+                const SizedBox(width: 20),
+                FloatingActionButton(
+                  heroTag: "leave",
+                  backgroundColor: Colors.red,
+                  onPressed: controller.leaveRoom,
+                  child: const Icon(Icons.call_end),
+                ),
+              ],
             ),
-          ],
-        ),
-        body: Obx(() {
-          if (controller.connecting.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (controller.isHost && controller.localVideoTrack != null) {
-            // Host video
-            return Center(
-              child: AspectRatio(
-                aspectRatio: 9 / 16,
-                child: VideoTrackRenderer(controller.localVideoTrack!),
-              ),
-            );
-          }
-
-          if (!controller.isHost && controller.remoteVideoTrack.value != null) {
-            // Viewer video
-            return Center(
-              child: AspectRatio(
-                aspectRatio: 9 / 16,
-                child: VideoTrackRenderer(controller.remoteVideoTrack.value!),
-              ),
-            );
-          }
-
-          // Buttons
-          if (controller.isHost) {
-            return Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  final roomId =
-                      "room_${DateTime.now().millisecondsSinceEpoch}";
-                  controller.startLive(
-                    roomId: roomId,
-                    hostId: "currentUserId",
-                  );
-                },
-                child: const Text("Go Live"),
-              ),
-            );
-          }
-
-          return const Center(child: Text("Waiting for host video..."));
-        }),
+          ),
+        ],
       ),
     );
   }
 }
+
+
+

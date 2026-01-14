@@ -6,6 +6,7 @@ abstract class Routes {
   static const LIVE_PAGE = _Paths.LIVE_PAGE;
   static const BOTTOM_BAR = _Paths.BOTTOM_BAR;
   static const MESSAGE = _Paths.MESSAGE;
+  static const START_LIVE = _Paths.START_LIVE;
 }
 
 abstract class _Paths {
@@ -14,4 +15,5 @@ abstract class _Paths {
   static const LIVE_PAGE = '/live-page';
   static const BOTTOM_BAR = '/bottom-bar';
   static const MESSAGE = '/message';
+  static const START_LIVE = '/start-live';
 }
