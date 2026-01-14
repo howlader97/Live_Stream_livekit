@@ -8,6 +8,8 @@ import '../modules/live_page/bindings/live_page_binding.dart';
 import '../modules/live_page/views/live_page_view.dart';
 import '../modules/message/bindings/message_binding.dart';
 import '../modules/message/views/message_view.dart';
+import '../modules/start_live/bindings/start_live_binding.dart';
+import '../modules/start_live/views/start_live_view.dart';
 
 part 'app_routes.dart';
 
@@ -24,7 +26,7 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.LIVE_PAGE,
-      page: () =>  LivePageView(),
+      page: () => LivePageView(),
       binding: LivePageBinding(),
     ),
     GetPage(
@@ -36,6 +38,11 @@ class AppPages {
       name: _Paths.MESSAGE,
       page: () => const MessageView(),
       binding: MessageBinding(),
+    ),
+    GetPage(
+      name: _Paths.START_LIVE,
+      page: () => const StartLiveView(),
+      binding: StartLiveBinding(),
     ),
   ];
 }

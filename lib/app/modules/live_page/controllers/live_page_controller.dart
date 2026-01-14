@@ -1,121 +1,97 @@
+
+
+
 import 'package:get/get.dart';
 import 'package:livekit_client/livekit_client.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../data/service/cloud_flare_service.dart';
-import '../../../data/service/live_kit_service.dart';
-import '../models/live_model.dart';
 
 class LivePageController extends GetxController {
-  var connecting = false.obs;
-
   Room? room;
-  CancelListenFunc? _cancelRoomListener;
+  late final EventsListener<RoomEvent> listener;
 
-  LocalVideoTrack? localVideoTrack;
-  final Rx<VideoTrack?> remoteVideoTrack = Rx<VideoTrack?>(null);
+  final isConnected = false.obs;
+  final localVideoTrack = Rxn<LocalVideoTrack>();
+  final remoteVideoTracks = <VideoTrack>[].obs;
 
-  bool get isHost => _live == null;
-  LiveModel? _live;
+  // TODO: Replace with your actual LiveKit Server URL
+  final String _liveKitUrl = "wss://liveworld-l78cuzu0.livekit.cloud";
 
-  void setLive(LiveModel? live) {
-    _live = live;
+  String token = "";
+  String roomName = "";
+  bool isHost = false;
+
+  @override
+  void onInit() {
+    super.onInit();
+    final args = Get.arguments;
+    if (args != null) {
+      token = args['token'] ?? "";
+      roomName = args['room_name'] ?? "";
+      isHost = args['is_host'] ?? false;
+    }
+    connect();
   }
 
-  Future<void> startLive({required String roomId, required String hostId}) async {
+  Future<void> connect() async {
+    // Request permissions
+    await [Permission.camera, Permission.microphone].request();
+
     try {
-      connecting.value = true;
+      room = Room();
+      listener = room!.createListener();
 
-      // Request camera/mic for host
-      await [Permission.camera, Permission.microphone].request();
+      await room!.connect(_liveKitUrl, token);
+      isConnected.value = true;
 
-      room = await LiveKitService.connectToRoom(roomId: roomId);
+      _setUpListeners();
 
-      await room!.localParticipant?.setCameraEnabled(true);
-      await room!.localParticipant?.setMicrophoneEnabled(true);
+      if (isHost) {
+        // Publish video and audio
+        var localVideo = await LocalVideoTrack.createCameraTrack();
+        await room!.localParticipant?.publishVideoTrack(localVideo);
+        localVideoTrack.value = localVideo;
 
-      final pubs = room!.localParticipant!.videoTrackPublications;
-      if (pubs.isNotEmpty) {
-        localVideoTrack = pubs.first.track as LocalVideoTrack;
+        await room!.localParticipant?.setMicrophoneEnabled(true);
       }
-
-      _cancelRoomListener = room!.events.listen(_onRoomEvent);
-
-      // Add live to Cloudflare
-      await CloudflareService.addLive(roomId: roomId, hostId: hostId);
     } catch (e) {
-      Get.snackbar("Error", e.toString());
-    } finally {
-      connecting.value = false;
+      print("Failed to connect: $e");
+      Get.snackbar("Error", "Failed to connect to room: $e");
     }
   }
 
-  Future<void> joinLive(LiveModel live) async {
-    try {
-      connecting.value = true;
+  void _setUpListeners() {
+    listener.on<TrackSubscribedEvent>((event) {
+      if (event.track is VideoTrack) {
+        remoteVideoTracks.add(event.track as VideoTrack);
+      }
+    });
 
-      room = await LiveKitService.connectToRoom(roomId: live.roomId);
-
-      // Viewer: camera/mic off
-      await room!.localParticipant?.setCameraEnabled(false);
-      await room!.localParticipant?.setMicrophoneEnabled(false);
-
-      _cancelRoomListener = room!.events.listen(_onRoomEvent);
-    } catch (e) {
-      Get.snackbar("Error", e.toString());
-    } finally {
-      connecting.value = false;
-    }
-  }
-
-  void _onRoomEvent(RoomEvent event) {
-    if (event is TrackSubscribedEvent &&
-        event.track is VideoTrack &&
-        remoteVideoTrack.value == null) {
-      remoteVideoTrack.value = event.track as VideoTrack;
-    }
-  }
-
-  /// Host stop live
-  Future<void> stopLive() async {
-    if (!isHost) return; // Viewer can't stop host live
-
-    if (room != null) {
-      await CloudflareService.removeLive(room!.name!);
-
-      _cancelRoomListener?.call();
-      _cancelRoomListener = null;
-
-      await room!.disconnect();
-
-      room = null;
-      localVideoTrack = null;
-      remoteVideoTrack.value = null;
-    }
-  }
-
-  /// Viewer leave live
-  Future<void> leaveLive() async {
-    if (isHost) {
-      await stopLive();
-      return;
-    }
-
-    if (room != null) {
-      _cancelRoomListener?.call();
-      _cancelRoomListener = null;
-
-      await room!.disconnect();
-
-      room = null;
-      remoteVideoTrack.value = null;
-    }
+    listener.on<TrackUnsubscribedEvent>((event) {
+      if (event.track is VideoTrack) {
+        remoteVideoTracks.remove(event.track);
+      }
+    });
   }
 
   @override
   void onClose() {
-    _cancelRoomListener?.call();
     room?.disconnect();
+    room?.dispose();
     super.onClose();
   }
+
+  void toggleMic() async {
+    if (room != null && room!.localParticipant != null) {
+      bool isEnabled = room!.localParticipant!.isMicrophoneEnabled();
+      await room!.localParticipant!.setMicrophoneEnabled(!isEnabled);
+    }
+  }
+
+  void leaveRoom() async {
+    await room?.disconnect();
+    Get.back();
+  }
 }
+
+
